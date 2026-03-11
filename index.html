@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ÍF Construction — Rent Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Space+Mono:wght@400;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0a0f1e;--navy2:#111827;--navy3:#1c2740;--navy4:#243050;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold-dim:#7a6128;
+  --white:#f0f4ff;--grey:#8896b3;--grey2:#4a5568;
+  --blue:#4a90d9;--green:#3dbb7c;--red:#e05c5c;--orange:#e8854a;
+  --border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.07);
+  --glow:0 0 30px rgba(201,168,76,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--navy);color:var(--white);font-family:'Source Sans 3',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(74,144,217,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(201,168,76,0.05) 0%,transparent 60%);z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 28px;}
+
+/* ── Header ── */
+header{border-bottom:1px solid var(--border);padding:28px 0 0;}
+.header-top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:20px;}
+.header-title h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--white);letter-spacing:-0.3px;line-height:1.1;}
+.header-title h1 span{color:var(--gold);}
+.header-title p{margin-top:6px;color:var(--grey);font-size:13px;font-weight:300;letter-spacing:0.4px;}
+.header-badge{display:flex;gap:12px;align-items:center;}
+.badge{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(201,168,76,0.07);color:var(--gold);font-size:11px;font-family:'Space Mono',monospace;letter-spacing:0.5px;white-space:nowrap;}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:0;}
+.tab-btn{padding:12px 28px;background:none;border:none;color:var(--grey);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.2s,border-color 0.2s;}
+.tab-btn:hover{color:var(--white);}
+.tab-btn.active{color:var(--gold);border-bottom:2px solid var(--gold);}
+.tab-page{display:none;}
+.tab-page.active{display:block;}
+
+/* ── Model layout ── */
+.main-grid{display:grid;grid-template-columns:380px 1fr;gap:0;min-height:calc(100vh - 115px);}
+.inputs-panel{border-right:1px solid var(--border2);padding:28px 24px 40px;overflow-y:auto;max-height:calc(100vh - 115px);position:sticky;top:115px;}
+.section-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';width:3px;height:12px;background:var(--gold);border-radius:2px;flex-shrink:0;}
+.input-group{margin-bottom:28px;}
+.field-row{margin-bottom:10px;}
+.field-row label{display:block;font-size:12px;color:var(--grey);font-weight:400;margin-bottom:4px;letter-spacing:0.2px;line-height:1.3;}
+.field-row .hint{font-size:10px;color:var(--grey2);margin-top:3px;font-style:italic;line-height:1.4;}
+.field-row input{width:100%;background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--white);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;}
+.field-row input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.12);}
+.field-row input:hover{border-color:var(--gold-dim);}
+.isk-display{font-family:'Space Mono',monospace;font-size:10px;color:var(--gold2);margin-top:3px;padding:3px 6px;background:rgba(201,168,76,0.06);border-radius:4px;letter-spacing:0.3px;}
+.field-full-hint{font-size:10px;color:var(--grey2);margin-top:-4px;margin-bottom:8px;font-style:italic;line-height:1.4;}
+.field-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.cc-wrap{position:relative;}
+.cc-wrap .cc-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--grey2);font-size:10px;font-family:'Space Mono',monospace;pointer-events:none;}
+
+/* ── Run button ── */
+.run-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold) 0%,#a8852c 100%);border:none;border-radius:8px;color:var(--navy);font-family:'Playfair Display',serif;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:transform 0.15s,box-shadow 0.15s,opacity 0.15s;box-shadow:0 4px 20px rgba(201,168,76,0.25);margin-top:20px;position:relative;overflow:hidden;}
+.run-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,168,76,0.35);}
+.run-btn:active{transform:translateY(0);}
+.run-btn.running{opacity:0.7;cursor:wait;}
+.run-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transform:translateX(-100%);transition:transform 0.5s;}
+.run-btn:hover::after{transform:translateX(100%);}
+
+/* ── Results ── */
+.results-panel{padding:28px 28px 60px;overflow-y:auto;}
+.hero-result{background:linear-gradient(135deg,var(--navy3) 0%,var(--navy4) 100%);border:1px solid var(--border);border-radius:12px;padding:28px 32px;margin-bottom:24px;box-shadow:var(--glow);display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;position:relative;overflow:hidden;}
+.hero-result::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.hero-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);margin-bottom:6px;}
+.hero-value{font-family:'Playfair Display',serif;font-size:42px;font-weight:700;color:var(--gold2);line-height:1;letter-spacing:-1px;}
+.hero-value.monthly{color:var(--white);font-size:36px;}
+.hero-unit{font-size:12px;color:var(--grey);margin-top:6px;font-family:'Space Mono',monospace;}
+.hero-divider{position:absolute;top:20%;bottom:20%;left:33.33%;width:1px;background:var(--border);}
+.hero-divider2{position:absolute;top:20%;bottom:20%;left:66.66%;width:1px;background:var(--border);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.kpi-card{background:var(--navy2);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;transition:border-color 0.2s;}
+.kpi-card:hover{border-color:var(--border);}
+.kpi-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);font-family:'Space Mono',monospace;margin-bottom:6px;}
+.kpi-val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--white);}
+.kpi-val.good{color:var(--green);}.kpi-val.warn{color:var(--orange);}.kpi-val.bad{color:var(--red);}
+.kpi-sub{font-size:10px;color:var(--grey2);margin-top:3px;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--navy2);border:1px solid var(--border2);border-radius:10px;padding:18px 20px 14px;}
+.chart-card h3{font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);margin-bottom:14px;}
+.chart-card canvas{max-height:200px;}
+.table-section{background:var(--navy2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;}
+.table-header{padding:14px 20px;border-bottom:1px solid var(--border2);}
+.table-header h3{font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:12px;}
+thead th{padding:10px 14px;text-align:right;color:var(--grey);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border2);white-space:nowrap;}
+thead th:first-child{text-align:left;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.03);transition:background 0.1s;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+tbody td{padding:9px 14px;text-align:right;color:var(--white);white-space:nowrap;}
+tbody td:first-child{text-align:left;color:var(--grey);}
+.dscr-ok{color:var(--green)!important;}.dscr-bad{color:var(--red)!important;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;color:var(--grey2);text-align:center;gap:12px;}
+.empty-state .big-icon{font-size:48px;opacity:0.3;line-height:1;}
+.empty-state p{font-size:14px;color:var(--grey);}
+.empty-state small{font-size:12px;color:var(--grey2);}
+.dscr-warning{background:rgba(224,92,92,0.1);border:1px solid rgba(224,92,92,0.3);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#f4a0a0;display:none;}
+
+/* ══ SENSITIVITY TAB ══ */
+.sens-page{padding:32px 0 80px;}
+.sens-header{margin-bottom:28px;}
+.sens-header h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--white);margin-bottom:6px;}
+.sens-header p{color:var(--grey);font-size:13px;line-height:1.6;}
+.sens-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;color:var(--grey2);text-align:center;gap:12px;}
+.sens-empty-state .big-icon{font-size:40px;opacity:0.25;}
+.sens-empty-state p{font-size:14px;color:var(--grey);}
+
+/* Heat map grid */
+.heatmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.heatmap-card{background:var(--navy2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;}
+.heatmap-card-header{padding:14px 18px 12px;border-bottom:1px solid var(--border2);}
+.heatmap-card-header h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--white);margin-bottom:3px;}
+.heatmap-card-header p{font-size:11px;color:var(--grey);}
+.heatmap-body{padding:14px 16px 18px;overflow-x:auto;}
+.heatmap-table{border-collapse:collapse;font-family:'Space Mono',monospace;font-size:11px;width:100%;}
+.heatmap-table th{padding:5px 8px;text-align:center;color:var(--grey);font-size:9px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--border2);white-space:nowrap;}
+.heatmap-table th.row-header{text-align:right;color:var(--grey);min-width:52px;}
+.heatmap-table td{padding:5px 6px;text-align:center;font-size:11px;color:var(--white);border:1px solid rgba(0,0,0,0.15);white-space:nowrap;min-width:70px;transition:opacity 0.15s;cursor:default;}
+.heatmap-table td:hover{opacity:0.85;}
+.heatmap-table td.row-label{background:none!important;text-align:right;color:var(--grey);font-size:10px;border:none;padding-right:10px;}
+.heatmap-table td.base-cell{outline:2px solid var(--gold);outline-offset:-2px;font-weight:700;}
+.heatmap-axis-label{font-size:10px;color:var(--grey2);font-family:'Space Mono',monospace;text-align:center;margin-top:8px;letter-spacing:0.5px;}
+.heatmap-y-label{font-size:10px;color:var(--grey2);font-family:'Space Mono',monospace;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);margin-right:4px;letter-spacing:0.5px;}
+
+/* One-way sensitivity table */
+.oneway-card{background:var(--navy2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;}
+.oneway-header{padding:14px 20px 12px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.oneway-header h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--white);}
+.oneway-header p{font-size:11px;color:var(--grey);}
+.oneway-wrap{overflow-x:auto;}
+.oneway-table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:12px;}
+.oneway-table th{padding:9px 14px;text-align:right;color:var(--grey);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border2);white-space:nowrap;}
+.oneway-table th:first-child{text-align:left;}
+.oneway-table th.base-col{color:var(--gold);border-bottom:2px solid var(--gold);}
+.oneway-table td{padding:9px 14px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);white-space:nowrap;color:var(--white);}
+.oneway-table td:first-child{text-align:left;color:var(--grey);font-size:11px;}
+.oneway-table td.base-col{background:rgba(201,168,76,0.07);color:var(--gold2);font-weight:700;}
+.oneway-table .param-val{font-size:9px;color:var(--grey2);display:block;margin-top:1px;}
+.oneway-table tr:hover td{background:rgba(255,255,255,0.02);}
+.oneway-table tr:hover td.base-col{background:rgba(201,168,76,0.12);}
+
+/* ══ INFO TAB ══ */
+.info-page{padding:40px 0 80px;max-width:900px;}
+.info-hero{background:linear-gradient(135deg,var(--navy3),var(--navy4));border:1px solid var(--border);border-radius:14px;padding:36px 40px;margin-bottom:40px;position:relative;overflow:hidden;}
+.info-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.info-hero h2{font-family:'Playfair Display',serif;font-size:26px;color:var(--white);margin-bottom:12px;}
+.info-hero p{color:var(--grey);line-height:1.75;font-size:15px;max-width:700px;}
+.info-section{margin-bottom:44px;}
+.info-section-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.info-section-title::before{content:'';width:3px;height:12px;background:var(--gold);border-radius:2px;}
+.info-section h3{font-family:'Playfair Display',serif;font-size:19px;color:var(--white);margin-bottom:10px;margin-top:24px;}
+.info-section h3:first-of-type{margin-top:0;}
+.info-section p{color:#b0bdd4;line-height:1.80;margin-bottom:14px;font-size:14.5px;}
+.info-section p:last-child{margin-bottom:0;}
+.info-callout{background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:14px 18px;margin:18px 0;}
+.info-callout p{color:var(--gold2)!important;font-size:13.5px!important;margin:0!important;}
+.info-callout.blue{background:rgba(74,144,217,0.07);border-left-color:var(--blue);}
+.info-callout.blue p{color:#a8ccf0!important;}
+.info-callout.red{background:rgba(224,92,92,0.07);border-left-color:var(--red);}
+.info-callout.red p{color:#f4a0a0!important;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;}
+.info-card{background:var(--navy2);border:1px solid var(--border2);border-radius:10px;padding:18px 20px;}
+.info-card h4{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.info-card p{color:#b0bdd4;font-size:13px;line-height:1.65;margin:0;}
+.formula-block{background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:16px 20px;margin:16px 0;font-family:'Space Mono',monospace;font-size:12px;color:var(--gold2);line-height:1.8;}
+.info-table{width:100%;border-collapse:collapse;margin:16px 0;}
+.info-table th{text-align:left;padding:9px 14px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--grey);border-bottom:1px solid var(--border2);}
+.info-table td{padding:9px 14px;font-size:13px;color:#b0bdd4;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top;}
+.info-table td:first-child{color:var(--white);font-weight:600;white-space:nowrap;}
+.info-table tr:hover td{background:rgba(255,255,255,0.02);}
+
+.tornado-section{background:var(--navy2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-top:24px;}
+.tornado-header{padding:14px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;}
+.tornado-header h3{font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);}
+.tornado-header span{font-size:10px;color:var(--grey2);font-family:'Space Mono',monospace;}
+.tornado-body{padding:20px 24px 24px;}
+.tornado-body canvas{width:100%!important;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--grey2);border-radius:3px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.animate-in{animation:fadeUp 0.4s ease forwards;}
+.animate-in:nth-child(2){animation-delay:0.05s;}
+.animate-in:nth-child(3){animation-delay:0.10s;}
+.animate-in:nth-child(4){animation-delay:0.15s;}
+@media(max-width:1100px){
+  .main-grid{grid-template-columns:1fr;}
+  .inputs-panel{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border2);}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-grid{grid-template-columns:1fr;}
+  .heatmap-grid{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr;}
+}
+@media(max-width:700px){
+  .scen-cards{grid-template-columns:1fr;}
+  .hero-result{grid-template-columns:1fr;}
+  .hero-divider{display:none;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="header-top">
+    <div class="header-title">
+      <h1>ÍF Construction <span>&rsaquo;</span> Rent Calculator</h1>
+      <p>Inverted DCF Rent Solver &nbsp;·&nbsp; Commercial Real Estate &nbsp;·&nbsp; ISK</p>
+    </div>
+    <div class="header-badge">
+      <span class="badge">UNLEVERED NPV = 0</span>
+      <span class="badge">BISECTION SOLVER</span>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('model',this)">&#9654;&nbsp; Model</button>
+    <button class="tab-btn" onclick="switchTab('scenarios',this)">&#9783;&nbsp; Scenarios</button>
+    <button class="tab-btn" onclick="switchTab('info',this)">&#9432;&nbsp; How It Works</button>
+  </div>
+</header>
+
+<!-- ══ TAB: MODEL ══ -->
+<div class="tab-page active" id="tab-model">
+<div class="main-grid">
+<aside class="inputs-panel">
+
+  <div class="input-group">
+    <div class="section-title">Project Basics</div>
+    <div class="field-row">
+      <label>Total Construction Cost (ISK)</label>
+      <div class="cc-wrap">
+        <input type="text" id="CC_display" value="6,000,000,000" oninput="formatCC(this);updateStatutoryDisplays();updateConstructionDisplay();" onblur="formatCC(this);updateStatutoryDisplays();updateConstructionDisplay();" style="padding-right:40px;">
+        <input type="hidden" id="CC_Total" value="6000000000">
+        <span class="cc-unit">ISK</span>
+      </div>
+    </div>
+    <div class="field-2col">
+      <div class="field-row"><label>Net Leasable Area (m2)</label><input type="number" id="NLA" value="6000" step="100" oninput="updateConstructionDisplay()"></div>
+      <div class="field-row"><label>Holding Period (yrs)</label><input type="number" id="HoldYrs" value="12" min="1" max="30"></div>
+    </div>
+    <div class="field-2col">
+      <div class="field-row"><label>Amortisation Period (yrs)</label><input type="number" id="AmortYrs" value="40" min="5" max="100"></div>
+      <div class="field-row"><label>Year 1 Start</label><input type="number" id="Yr1" value="2026" min="2020" max="2040"></div>
+    </div>
+    <div class="section-title" style="margin-top:10px;">Construction Financing</div>
+    <div class="field-full-hint" style="margin-bottom:8px;color:#c9a84c;">Interest accrues during build and is capitalised into the permanent loan at handover.</div>
+    <div class="field-2col">
+      <div class="field-row">
+        <label>Construction Period (months)</label>
+        <input type="number" id="ConstructionMonths" value="20" step="1" min="1" max="60" oninput="updateConstructionDisplay()">
+      </div>
+      <div class="field-row">
+        <label>Construction Loan Rate (%/yr)</label>
+        <input type="number" id="ConstructionRate" value="12.0" step="0.25" min="0" max="25" oninput="updateConstructionDisplay()">
+        <div class="hint">CB base rate ~9% + 3% margin</div>
+      </div>
+    </div>
+    <div id="constructionDisplay" style="background:#1a2235;border-radius:6px;padding:10px 12px;margin-top:6px;font-size:11px;line-height:1.9;color:#8896b3;">
+      <span id="cdCostPsm" style="color:#c9a84c;">--</span> &nbsp;ISK/m² construction cost &nbsp;·&nbsp;
+      <span id="cdInterest" style="color:#e8854a;">--</span> &nbsp;ISK construction interest &nbsp;·&nbsp;
+      <span id="cdAllinPsm" style="color:#3dbb7c;">--</span> &nbsp;ISK/m² all-in (incl. financing)
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="section-title">Iceland Statutory Costs</div>
+    <div class="field-row">
+      <label>Fasteignamat (% of CC)</label>
+      <input type="number" id="FgPct" value="65.00" step="0.5" min="0" max="200" oninput="updateStatutoryDisplays()">
+      <div class="isk-display" id="fg_isk_display">--</div>
+      <div class="hint">Official assessed property value. Typical 50–90%</div>
+    </div>
+    <div class="field-row">
+      <label>Lóðarmat (% of CC)</label>
+      <input type="number" id="LoPct" value="15.00" step="0.5" min="0" max="100" oninput="updateStatutoryDisplays()">
+      <div class="isk-display" id="lo_isk_display">--</div>
+      <div class="hint">Land assessed value. Enter 0 if land owned outright</div>
+    </div>
+    <div class="field-row">
+      <label>Brunabótamat (% of CC)</label>
+      <input type="number" id="BtPct" value="80.00" step="0.5" min="0" max="150" oninput="updateStatutoryDisplays()">
+      <div class="isk-display" id="bt_isk_display">--</div>
+      <div class="hint">Fire insurance replacement value. Typical 70–90%</div>
+    </div>
+    <div class="field-3col">
+      <div class="field-row">
+        <label>Fasteignagjald (%)</label>
+        <input type="number" id="FgRate" value="1.40" step="0.05" min="0" max="5">
+        <div class="hint">% of Fasteignamat</div>
+      </div>
+      <div class="field-row">
+        <label>Lóðarleiga (%)</label>
+        <input type="number" id="LlRate" value="1.20" step="0.05" min="0" max="10">
+        <div class="hint">% of Lóðarmat</div>
+      </div>
+      <div class="field-row">
+        <label>Tryggingar (%)</label>
+        <input type="number" id="TryggRate" value="0.12" step="0.01" min="0" max="2">
+        <div class="hint">% of Brunabótamat</div>
+      </div>
+    </div>
+    <div class="field-3col">
+      <div class="field-row">
+        <label>Vatnsgjald (%)</label>
+        <input type="number" id="VatnRate" value="0.052" step="0.001" min="0" max="2">
+        <div class="hint">% of Fasteignamat</div>
+      </div>
+      <div class="field-row">
+        <label>Fráveitugjald (%)</label>
+        <input type="number" id="FravRate" value="0.116" step="0.001" min="0" max="2">
+        <div class="hint">% of Fasteignamat</div>
+      </div>
+      <div class="field-row" style="visibility:hidden;"></div>
+    </div>
+    <div class="field-full-hint">Rates vary by municipality · Hafnarfjörður benchmarks: Lóðarleiga 1.17%, Vatnsgjald 0.052%, Fráveitugjald 0.116%</div>
+  </div>
+
+  <div class="input-group">
+    <div class="section-title">Operating Assumptions</div>
+    <div class="field-3col">
+      <div class="field-row"><label>Vacancy Yr1 (%)</label><input type="number" id="Vac1Rate" value="25" step="1" min="0" max="100"></div>
+      <div class="field-row"><label>Vacancy Yr2 (%)</label><input type="number" id="Vac2Rate" value="5" step="1" min="0" max="100"></div>
+      <div class="field-row"><label>Vacancy Stab (%)</label><input type="number" id="VacRate" value="0" step="0.5" min="0" max="100"></div>
+    </div>
+    <div class="field-2col">
+      <div class="field-row"><label>Non-Recov. Opex (% EGI)</label><input type="number" id="OpexPct" value="5.0" step="0.5" min="0" max="50"></div>
+      <div class="field-row"><label>Expense Recovery (%)</label><input type="number" id="ExpRecov" value="2.5" step="0.5" min="0" max="100"></div>
+    </div>
+    <div class="field-2col">
+      <div class="field-row"><label>Mgmt Fee (% EGI)</label><input type="number" id="MgmtFee" value="3.5" step="0.1" min="0" max="20"></div>
+      <div class="field-row"><label>Viðhald (% of CC/yr)</label><input type="number" id="VidHaldPct" value="0.20" step="0.05" min="0" max="5"></div>
+    </div>
+    <div class="field-full-hint">Viðhald applied to total construction cost &nbsp;·&nbsp; Reitir benchmark ~0.20–0.45%</div>
+  </div>
+
+  <div class="input-group">
+    <div class="section-title">Valuation</div>
+    <div class="field-full-hint" style="margin-bottom:10px;color:#c9a84c;">Model runs in real terms — all cashflows constant in today's money. WACC and Exit Cap are real rates.</div>
+    <div class="field-2col">
+      <div class="field-row"><label>Real WACC (%)</label><input type="number" id="WACC" value="6.5" step="0.1" min="1" max="20"><div class="hint">Real required return · Reitir/Heimar existing portfolio: 5.5% (Jakobsson Capital 2026)</div></div>
+      <div class="field-row"><label>Real Exit Cap Rate (%)</label><input type="number" id="ExitCapRate" value="6.0" step="0.1" min="1" max="15"><div class="hint">NOI / property value at exit, in real terms</div></div>
+    </div>
+    <div class="field-2col">
+      <div class="field-row"><label>Tax Rate (%)</label><input type="number" id="TaxRate" value="20" step="1" min="0" max="60"></div>
+      <div class="field-row"><label>CGT Rate (%)</label><input type="number" id="CGTRate" value="20" step="1" min="0" max="60"></div>
+    </div>
+    <div class="field-row"><label>Exit Transaction Costs (%)</label><input type="number" id="ExitCosts" value="1.2" step="0.1" min="0" max="10"></div>
+  </div>
+
+  <div class="input-group">
+    <div class="section-title">Debt Financing</div>
+    <div class="field-full-hint" style="margin-bottom:10px;color:#c9a84c;">Index-linked loan (verðtryggt lán) — modelled in real terms. Enter real interest rate only.</div>
+    <div class="field-2col">
+      <div class="field-row">
+        <label>Real Base Rate (%) <span style="font-size:9px;color:#8896b3;">e.g. RIKS 37</span></label>
+        <input type="number" id="RealBase" value="2.54" step="0.05" min="0" max="15" oninput="updateRealRateDisplay()">
+      </div>
+      <div class="field-row">
+        <label>Lender Margin (%)</label>
+        <input type="number" id="LoanMargin" value="1.10" step="0.05" min="0" max="10" oninput="updateRealRateDisplay()">
+        <div class="hint">Reitir/Heimar market total: ~3.65% real → margin ~1.1% over RIKS</div>
+      </div>
+    </div>
+    <div class="field-full-hint" id="nominalDisplay" style="color:#3dbb7c;">Effective real loan rate: 4.54%</div>
+    <div class="field-row">
+      <label>Loan-to-Cost (%)</label>
+      <input type="number" id="LTC" value="65" step="1" min="0" max="95" oninput="updateConstructionDisplay()">
+    </div>
+    <div class="field-3col">
+      <div class="field-row"><label>Amort. Period (yrs)</label><input type="number" id="LoanAmort" value="25" step="1" min="5" max="50"></div>
+      <div class="field-row"><label>IO Period (yrs)</label><input type="number" id="IOPeriod" value="2" step="1" min="0" max="10"></div>
+      <div class="field-row"><label>Min. DSCR (x)</label><input type="number" id="MinDSCR" value="1.10" step="0.05" min="1" max="3"></div>
+    </div>
+  </div>
+
+  <button class="run-btn" onclick="runModel()" id="runBtn">&#9654; &nbsp; Run Model</button>
+</aside>
+
+<main class="results-panel" id="resultsPanel">
+  <div class="empty-state" id="emptyState">
+    <div class="big-icon">&#9672;</div>
+    <p>Set your assumptions and click <strong>Run Model</strong></p>
+    <small>Results, charts and year-by-year table will appear here</small>
+  </div>
+  <div id="resultsContent" style="display:none">
+    <div class="dscr-warning" id="dscrWarning"></div>
+    <div class="hero-result animate-in">
+      <div class="hero-divider"></div>
+      <div class="hero-divider2"></div>
+      <div class="hero-block">
+        <div class="hero-label">Required Initial Rent</div>
+        <div class="hero-value" id="heroAnnual">--</div>
+        <div class="hero-unit">ISK / m² / year &nbsp;· real terms (today's money)</div>
+      </div>
+      <div class="hero-block">
+        <div class="hero-label">Monthly Equivalent</div>
+        <div class="hero-value monthly" id="heroMonthly">--</div>
+        <div class="hero-unit">ISK / m² / month &nbsp;· real terms (today's money)</div>
+      </div>
+      <div class="hero-block">
+        <div class="hero-label">Annual Total Income</div>
+        <div class="hero-value" id="heroGpi" style="color:var(--green2,#3dbb7c);font-size:36px;">--</div>
+        <div class="hero-unit">ISK / year &nbsp;· GPI at stabilised occupancy</div>
+      </div>
+    </div>
+    <div class="kpi-grid animate-in">
+      <div class="kpi-card"><div class="kpi-label">Unlevered IRR</div><div class="kpi-val" id="kpiUlIrr">--</div><div class="kpi-sub">Target = WACC</div></div>
+      <div class="kpi-card"><div class="kpi-label">Levered IRR</div><div class="kpi-val" id="kpiLvIrr">--</div><div class="kpi-sub">Equity return</div></div>
+      <div class="kpi-card"><div class="kpi-label">Equity Multiple</div><div class="kpi-val" id="kpiEqMult">--</div><div class="kpi-sub">Over holding period</div></div>
+      <div class="kpi-card"><div class="kpi-label">Rent Multiplier</div><div class="kpi-val" id="kpiMultiplier">--</div><div class="kpi-sub">CC/m2 / monthly rent</div></div>
+      <div class="kpi-card"><div class="kpi-label">Gross Yield</div><div class="kpi-val" id="kpiGrossYield">--</div><div class="kpi-sub">GPI / CC stabilised</div></div>
+      <div class="kpi-card"><div class="kpi-label">Net Yield</div><div class="kpi-val" id="kpiYoc">--</div><div class="kpi-sub">NOI / CC stabilised</div></div>
+      <div class="kpi-card"><div class="kpi-label">NOI Ratio</div><div class="kpi-val" id="kpiNoiRatio">--</div><div class="kpi-sub">NOI / GPI stabilised</div></div>
+      <div class="kpi-card"><div class="kpi-label">Min DSCR</div><div class="kpi-val" id="kpiMinDscr">--</div><div class="kpi-sub">Across holding period</div></div>
+      <div class="kpi-card"><div class="kpi-label">Terminal Value</div><div class="kpi-val" id="kpiTv">--</div><div class="kpi-sub">Net exit proceeds after CGT</div></div>
+      <div class="kpi-card"><div class="kpi-label">Net Equity at Exit</div><div class="kpi-val" id="kpiNetEquity">--</div><div class="kpi-sub">TV minus loan payoff</div></div>
+      <div class="kpi-card"><div class="kpi-label">Construction Cost / m²</div><div class="kpi-val" id="kpiCcPsm">--</div><div class="kpi-sub">ISK / m² NLA · ex financing</div></div>
+      <div class="kpi-card"><div class="kpi-label">All-in Cost / m²</div><div class="kpi-val" id="kpiAllinPsm">--</div><div class="kpi-sub">ISK / m² · incl. construction interest</div></div>
+      <div class="kpi-card"><div class="kpi-label">Unlevered NPV</div><div class="kpi-val" id="kpiNpv">--</div><div class="kpi-sub">At solved rent (~0)</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Opex (stabilised)</div><div class="kpi-val" id="kpiTotalOpex">--</div><div class="kpi-sub">ISK/yr · all costs incl. statutory</div></div>
+      <div class="kpi-card"><div class="kpi-label">Public Fees &amp; Insurance</div><div class="kpi-val" id="kpiStatOpex">--</div><div class="kpi-sub">ISK/yr · paid to authorities</div></div>
+      <div class="kpi-card"><div class="kpi-label">Owner Income (NOI)</div><div class="kpi-val" id="kpiOwnerNoi">--</div><div class="kpi-sub">ISK/yr · after all costs</div></div>
+    </div>
+    <div class="charts-grid animate-in">
+      <div class="chart-card"><h3>Income -- EGI / NOI / CFBDS</h3><canvas id="chartIncome"></canvas></div>
+      <div class="chart-card"><h3>Rent per m2 -- Annual / Monthly</h3><canvas id="chartRent"></canvas></div>
+      <div class="chart-card"><h3>DSCR vs Minimum Covenant</h3><canvas id="chartDscr"></canvas></div>
+      <div class="chart-card"><h3>Value Components (ISK Billion)</h3><canvas id="chartWaterfall"></canvas></div>
+    </div>
+    <div class="table-section animate-in">
+      <div class="table-header"><h3>Year-by-Year Summary</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Year</th><th>Rent/m2/yr</th><th>Rent/m2/mo</th><th>GPI</th><th>EGI</th><th>NOI</th><th>CFBDS</th><th>Debt Svc</th><th>DSCR</th><th>Loan Balance</th><th>Prop. Value</th><th>Net Equity</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tornado-section animate-in" id="tornadoSection" style="display:none">
+      <div class="tornado-header">
+        <h3>Sensitivity / Tornado Chart</h3>
+        <span>Impact on required rent (ISK/m2/yr) -- each input stressed independently</span>
+      </div>
+      <div class="tornado-body">
+        <canvas id="chartTornado"></canvas>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+</div><!-- /tab-model -->
+
+<!-- ══ TAB: SENSITIVITY ══ -->
+<div class="tab-page" id="tab-scenarios">
+<div class="sens-page">
+  <div class="sens-header">
+    <h2>Sensitivity Analysis</h2>
+    <p>Auto-populated from your Model tab assumptions. Run the model first, then return here. Base case values are highlighted in gold. Colour scale runs green (low rent) to red (high rent) within each table.</p>
+  </div>
+
+  <div class="sens-empty-state" id="sensEmpty">
+    <div class="big-icon">&#9783;</div>
+    <p>Run the model first to populate sensitivity tables</p>
+  </div>
+
+  <div id="sensContent" style="display:none">
+
+    <!-- Heat maps -->
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+
+    <!-- One-way table -->
+    <div class="oneway-card">
+      <div class="oneway-header">
+        <h3>One-Way Sensitivity &mdash; Required Rent (ISK/m&sup2;/month)</h3>
+        <p>Each variable stressed independently &nbsp;&middot;&nbsp; All other inputs held at base case &nbsp;&middot;&nbsp; Base case column in gold</p>
+      </div>
+      <div class="oneway-wrap">
+        <table class="oneway-table" id="onewayTable"></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /tab-scenarios -->
+
+<!-- ══ TAB: HOW IT WORKS ══ -->
+<div class="tab-page" id="tab-info">
+<div class="info-page">
+  <div class="info-hero">
+    <h2>How the Model Works</h2>
+    <p>This tool answers one specific question: <strong>what is the minimum real rent per m² that makes a care home development financially viable in Iceland?</strong> It uses an inverted Discounted Cash Flow (DCF) approach — rather than projecting returns from a given rent, it works backwards from a required return to find the rent that exactly satisfies it. All cashflows are modelled in <strong>real (inflation-adjusted) terms</strong>, which is the natural framework for CPI-indexed leases and verðtryggð lán.</p>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">1 · The Core Logic — Inverted DCF</div>
+    <h3>What is an Inverted DCF?</h3>
+    <p>A standard DCF takes a set of inputs including rent and calculates the resulting return. An inverted DCF does the opposite: it sets the required return as the target and asks what rent is needed to achieve it. In this model, the target is <strong>Unlevered NPV = 0</strong> at the specified real WACC. The rent that satisfies this is the minimum viable rent in today's money — anything lower and the project does not cover its cost of capital.</p>
+    <div class="formula-block">Unlevered NPV  =  −(Construction Cost + Construction Interest)
+               +  Σ [ After-Tax CFBDS(t) / (1 + Real WACC)^t ]
+               +  Terminal Value (net of CGT) / (1 + Real WACC)^N
+
+Solver finds:  Rent* such that NPV = 0</div>
+    <h3>The Bisection Solver</h3>
+    <p>The model uses a bisection algorithm starting at ISK 100/m² and ISK 500,000/m², progressively narrowing the range until NPV is within ISK 1 of zero. Converges in under 200 iterations and runs in milliseconds in the browser.</p>
+    <div class="info-callout"><p>Real WACC must be strictly greater than the Real Exit Cap Rate for the solver to work. If WACC ≤ Exit Cap Rate, the terminal value discounts to more than the initial cost at any positive rent — no minimum can be found. For a development model the exit cap rate is typically below WACC by design: you build at a high yield and sell at a lower yield, with the compression providing the development profit.</p></div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">2 · Why Real Terms?</div>
+    <p>Icelandic care home leases are typically CPI-indexed (verðtryggðar leigur). This means rent and operating costs both escalate at the same rate — CPI — so in real terms all cashflows are flat. Modelling in real terms is therefore not a simplification; it is the exact correct framework. The solved rent is the contract rent stated in today's ISK, which is what the lease agreement is signed at. The bank's verðtryggðar lán also behaves cleanly in real terms: the real loan balance is constant and real interest = balance × real rate.</p>
+    <div class="info-callout blue"><p>Real WACC ≈ 6.5% for a new development. This is above the 5.5% observed for Reitir and Heimar (Jakobsson Capital, 2026) because their rates reflect seasoned, diversified portfolios. A greenfield single-asset development carries higher construction risk, lease-up risk and illiquidity, justifying a 100–150bp premium.</p></div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">3 · Construction Financing</div>
+    <p>During the construction period the bank draws down the construction loan in equal monthly tranches. Interest accrues on the drawn balance throughout the build. Since the average balance is 50% of the total committed loan (drawn evenly from zero to full amount), the total construction interest is:</p>
+    <div class="formula-block">Construction Interest  =  CC × LTC × (Rate/12) × Months × 0.5
+
+Example (defaults):  6,000M × 65% × (12%/12) × 20 × 0.5  =  390M ISK</div>
+    <p>This interest is capitalised — rolled into the permanent loan at handover. The permanent loan opening balance is therefore <strong>CC × LTC + Construction Interest</strong>, not just CC × LTC. This increases annual debt service throughout the hold period and raises the minimum viable rent. The unlevered NPV also uses the full all-in cost (CC + Construction Interest) as the initial outflow, ensuring both the levered and unlevered analyses are consistent.</p>
+    <p>The KPI panel shows both the pure construction cost per m² and the all-in cost per m² including capitalised interest, so the development cost basis is always transparent.</p>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">4 · Cash Flow Structure</div>
+    <div class="info-grid">
+      <div class="info-card"><h4>GPI</h4><p>Gross Potential Income = Annual Rent/m² × NLA. Represents 100% occupancy with no voids. Flat in real terms — CPI escalation cancels out.</p></div>
+      <div class="info-card"><h4>EGI</h4><p>Effective Gross Income = GPI × (1 − Vacancy). Year 1 vacancy reflects lease-up delay (default 25%), Year 2 partial stabilisation (default 5%), fully stabilised from Year 3.</p></div>
+      <div class="info-card"><h4>NOI</h4><p>Net Operating Income = EGI minus all operating expenses: statutory costs, non-recoverable opex (% of EGI), management fee (% of EGI), and Viðhald (maintenance % of CC). Expense recovery is applied to non-statutory costs passed to the tenant.</p></div>
+      <div class="info-card"><h4>CFBDS</h4><p>Cash Flow Before Debt Service = (NOI − Tax) + Depreciation add-back. This is the free cash flow before the lender is paid, used to calculate Unlevered IRR and NPV.</p></div>
+      <div class="info-card"><h4>Debt Service</h4><p>During the interest-only period: interest only on the permanent loan balance. After IO: standard annuity on the real loan balance at the real loan rate (RealBase + Margin). Principal reduces each year.</p></div>
+      <div class="info-card"><h4>Terminal Value</h4><p>At exit: Gross TV = Year N NOI / Real Exit Cap Rate. Net TV = Gross TV × (1 − Exit Costs) − CGT on gain above depreciated book value. The KPI card shows net TV and gross TV for comparison.</p></div>
+    </div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">5 · Loan Structure — Verðtryggð Lán</div>
+    <p>The permanent loan is modelled as a real-terms indexed loan (verðtryggð lán), which is standard for large commercial property finance in Iceland. Key mechanics:</p>
+    <table class="info-table">
+      <thead><tr><th>Parameter</th><th>How it works in the model</th></tr></thead>
+      <tbody>
+        <tr><td>Opening balance</td><td>CC × LTC + capitalised construction interest</td></tr>
+        <tr><td>Real loan rate</td><td>Real Base Rate (RIKS 37 reference) + Lender Margin. Default: 2.54% + 1.10% = 3.64%</td></tr>
+        <tr><td>Interest-only period</td><td>First N years: interest only on the full balance. Matches typical bank terms during lease-up.</td></tr>
+        <tr><td>Amortisation</td><td>Standard annuity after IO period. Balance declines in real terms each year.</td></tr>
+        <tr><td>DSCR</td><td>NOI / Total Debt Service (interest + principal). For IO years: NOI / interest only. Minimum covenant threshold configurable (default 1.10×).</td></tr>
+      </tbody>
+    </table>
+    <div class="info-callout blue"><p>A 1.25× DSCR minimum is a nominal-world convention. For verðtryggð lán, Icelandic banks more commonly assess the Interest Coverage Ratio (ICR = NOI / interest) and watch real LTV against the appraisal. At market defaults the model produces ICR ≈ 1.6–1.8×, which is consistent with bankable sovereign-tenant care home deals.</p></div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">6 · Iceland Statutory Costs</div>
+    <p>All statutory costs are computed on the construction cost using standard Icelandic assessment ratios and municipal rates. They are flat in real terms (indexed to property values which track CPI).</p>
+    <table class="info-table">
+      <thead><tr><th>Cost</th><th>Assessment basis</th><th>Basis %</th><th>Rate</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Fasteignagjöld</td><td>Fasteignamat</td><td>65% of CC</td><td>~1.40%</td><td>Annual property tax assessed by Þjóðskrá Íslands. Rate varies by municipality.</td></tr>
+        <tr><td>Lóðarleiga</td><td>Lóðarmat</td><td>15% of CC</td><td>~1.20%</td><td>Ground lease charge to municipality. Set rate to 0% if land is owned freehold.</td></tr>
+        <tr><td>Brunatrygging</td><td>Brunabótamat</td><td>80% of CC</td><td>~0.12%</td><td>Mandatory fire insurance premium on replacement value (Brunabótamat).</td></tr>
+        <tr><td>Vatnsgjald</td><td>Fasteignamat</td><td>65% of CC</td><td>~0.052%</td><td>Municipal water and sewerage charge.</td></tr>
+        <tr><td>Fráveitugjald</td><td>Fasteignamat</td><td>65% of CC</td><td>~0.116%</td><td>Municipal wastewater charge. Vatnsgjald + Fráveitugjald combined ~0.168% of Fasteignamat.</td></tr>
+        <tr><td>Viðhald</td><td>Total CC</td><td>100%</td><td>~0.20%</td><td>Annual maintenance reserve. For a new build this covers planned maintenance from year 3+.</td></tr>
+      </tbody>
+    </table>
+    <div class="info-callout red"><p>Statutory rates and assessment ratios are set by each municipality and reassessed periodically. The defaults are calibrated against the Hamrabær care home (Hafnarfjörður, 2023) and cross-checked against Reitir's Nauthólsveg 50 deal (2025). Use conservative (high) estimates for bank submissions to stress-test reassessment risk.</p></div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">7 · Market Calibration</div>
+    <p>The model defaults have been calibrated against two public data sources:</p>
+    <table class="info-table">
+      <thead><tr><th>Reference</th><th>Asset</th><th>Key figure</th><th>Model implication</th></tr></thead>
+      <tbody>
+        <tr><td>Reitir / Jakobsson Capital (2026)</td><td>Nauthólsveg 50, 87-bed nursing home, 6,500 m², 20-yr FSRE lease</td><td>6,700 ISK/m²/month</td><td>At CC ≈ 6.0B, NLA 6,000 m², WACC 6.5%, Exit Cap 6.0%, 20-month construction at 12%: model produces ~6,750 ISK/m²/month ✓</td></tr>
+        <tr><td>Hamrabær (2023)</td><td>Hafnarfjörður, 6,730 m², ~6.8B ISK total cost</td><td>6,578 ISK/m²/month actual</td><td>Statutory cost rates and assessment basis validated against actual municipal charges</td></tr>
+        <tr><td>Jakobsson Capital WACC analysis (2026)</td><td>Reitir: 5.54% real WACC · Heimar: 5.46% real WACC</td><td>Real loan rate ~3.6–3.7%</td><td>Lender margin 1.10% over RIKS 37 base rate (2.54%) = 3.64% real loan rate</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-section">
+    <div class="info-section-title">8 · Model Limitations</div>
+    <table class="info-table">
+      <thead><tr><th>Assumption</th><th>What the model assumes</th><th>Real-world note</th></tr></thead>
+      <tbody>
+        <tr><td>Single rent</td><td>One rent/m² for entire NLA</td><td>Mixed-use buildings: use a blended rate or run each zone separately</td></tr>
+        <tr><td>Flat real cashflows</td><td>CPI escalation on rent and costs cancel exactly</td><td>Valid for full CPI-indexed leases; adjust if lease has rent caps or partial indexation</td></tr>
+        <tr><td>Equal construction drawdown</td><td>Loan drawn in equal monthly tranches</td><td>Front-loaded draws (e.g. large land payment) increase interest; adjust CC or construction months accordingly</td></tr>
+        <tr><td>Single exit</td><td>Full asset sale at end of holding period</td><td>Partial disposals, forward sales, and refinancing not modelled</td></tr>
+        <tr><td>No development profit margin</td><td>NPV = 0 means return exactly equals WACC</td><td>A developer seeking a profit margin above WACC should raise the WACC input to include their required developer's return</td></tr>
+        <tr><td>Single tax rate</td><td>Flat 20% corporate tax on taxable income</td><td>Group structures, interest deductibility limits (EBITDA cap), and loss carry-forwards not modelled</td></tr>
+      </tbody>
+    </table>
+    <div class="info-callout blue"><p>This tool is for indicative analysis only and does not constitute financial advice. All assumptions should be reviewed by a qualified valuer, lender and tax advisor before use in a formal submission or investment decision.</p></div>
+  </div>
+</div>
+</div><!-- /tab-info -->
+
+</div><!-- /wrap -->
+
+<script>
+// ══════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════════════
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-page').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════
+//  CONSTRUCTION COST FORMATTING
+// ══════════════════════════════════════════════════════
+function formatCC(el){
+  const raw=el.value.replace(/[^0-9]/g,'');
+  const num=parseInt(raw,10);
+  if(!isNaN(num)){el.value=num.toLocaleString('en-US');document.getElementById('CC_Total').value=num;}
+  else{el.value='';document.getElementById('CC_Total').value=0;}
+}
+
+function updateRealRateDisplay(){
+  const realBase=parseFloat(document.getElementById('RealBase').value)||0;
+  const margin=parseFloat(document.getElementById('LoanMargin').value)||0;
+  document.getElementById('nominalDisplay').textContent=
+    `Effective real loan rate: ${(realBase+margin).toFixed(2)}%`;
+}
+
+function updateConstructionDisplay(){
+  const cc=parseFloat(document.getElementById('CC_Total').value)||0;
+  const nla=parseFloat(document.getElementById('NLA').value)||1;
+  const ltc=(parseFloat(document.getElementById('LTC').value)||65)/100;
+  const months=parseFloat(document.getElementById('ConstructionMonths').value)||0;
+  const rate=(parseFloat(document.getElementById('ConstructionRate').value)||0)/100;
+  const interest=cc*ltc*(rate/12)*months*0.5;
+  const allin=cc+interest;
+  const fmt=v=>Math.round(v).toLocaleString('en-US');
+  const el=id=>document.getElementById(id);
+  el('cdCostPsm').textContent=cc&&nla?fmt(Math.round(cc/nla/1000)*1000):'--';
+  el('cdInterest').textContent=cc?fmt(Math.round(interest/1e6))+'M':'--';
+  el('cdAllinPsm').textContent=cc&&nla?fmt(Math.round(allin/nla/1000)*1000):'--';
+}
+
+function updateStatutoryDisplays(){
+  const cc=parseFloat(document.getElementById('CC_Total').value)||0;
+  const fg=cc*(parseFloat(document.getElementById('FgPct').value)||0)/100;
+  const lo=cc*(parseFloat(document.getElementById('LoPct').value)||0)/100;
+  const bt=cc*(parseFloat(document.getElementById('BtPct').value)||0)/100;
+  const fmtM=v=>Math.round(v).toLocaleString('en-US')+' ISK';
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=cc?fmtM(v):'--';};
+  set('fg_isk_display',fg);
+  set('lo_isk_display',lo);
+  set('bt_isk_display',bt);
+}
+
+// Initialise on page load
+window.addEventListener('DOMContentLoaded',()=>{updateStatutoryDisplays();updateRealRateDisplay();updateConstructionDisplay();});
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+const fmt=(v,d=0)=>v==null||isNaN(v)?'--':new Intl.NumberFormat('en-IS',{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+const fmtB=v=>Math.abs(v)>=1e9?(v/1e9).toFixed(2)+'B':Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':fmt(v);
+const pct=v=>(v*100).toFixed(2)+'%';
+const p1=v=>(v*100).toFixed(1)+'%';
+const fmtDelta=(v,isRent=false)=>{
+  if(Math.abs(v)<0.5)return '<span class="delta-zero">--</span>';
+  const s=v>0?'+':'';
+  const cls=v>0?'delta-pos':'delta-neg';
+  return `<span class="${cls}">${s}${isRent?fmt(v,0):fmt(v,0)}</span>`;
+};
+
+// ══════════════════════════════════════════════════════
+//  READ INPUTS
+// ══════════════════════════════════════════════════════
+function getInputs(){
+  const n=id=>parseFloat(document.getElementById(id).value);
+  return{
+    CC_Total:n('CC_Total'),NLA:n('NLA'),HoldYrs:Math.round(n('HoldYrs')),
+    AmortYrs:n('AmortYrs'),Yr1:Math.round(n('Yr1')),
+    ConstructionMonths:n('ConstructionMonths'),ConstructionRate:n('ConstructionRate')/100,
+    FgPct:n('FgPct')/100,LoPct:n('LoPct')/100,BtPct:n('BtPct')/100,
+    FgRate:n('FgRate')/100,LlRate:n('LlRate')/100,TryggRate:n('TryggRate')/100,
+    VatnRate:n('VatnRate')/100,FravRate:n('FravRate')/100,
+    Vac1Rate:n('Vac1Rate')/100,Vac2Rate:n('Vac2Rate')/100,VacRate:n('VacRate')/100,
+    RealBase:n('RealBase')/100,LoanMargin:n('LoanMargin')/100,
+    OpexPct:n('OpexPct')/100,ExpRecov:n('ExpRecov')/100,
+    MgmtFee:n('MgmtFee')/100,VidHaldPct:n('VidHaldPct')/100,
+    WACC:n('WACC')/100,ExitCapRate:n('ExitCapRate')/100,ExitCosts:n('ExitCosts')/100,
+    TaxRate:n('TaxRate')/100,CGTRate:n('CGTRate')/100,
+    RealBase:n('RealBase')/100,LoanMargin:n('LoanMargin')/100,
+    LTC:n('LTC')/100,LoanAmort:n('LoanAmort'),IOPeriod:n('IOPeriod'),MinDSCR:n('MinDSCR'),
+  };
+}
+
+// ══════════════════════════════════════════════════════
+//  CORE MODEL
+// ══════════════════════════════════════════════════════
+function computeModel(rent_y1,a){
+  const N=a.HoldYrs,nla=a.NLA,cc=a.CC_Total;
+  const fg_isk=cc*a.FgPct,lo_isk=cc*a.LoPct,bt_isk=cc*a.BtPct;
+  // All statutory costs fixed in real terms (no escalation)
+  const fg_cost=fg_isk*a.FgRate;
+  const ll_cost=lo_isk*a.LlRate;
+  const trygg_cost=bt_isk*a.TryggRate;
+  const vatn_cost=fg_isk*a.VatnRate;
+  const frav_cost=fg_isk*a.FravRate;
+  const vidh_cost=cc*a.VidHaldPct;
+  const realRate=a.RealBase+a.LoanMargin;
+  // Construction interest: drawn equally → average balance = 50% over period
+  const constructionLoan=cc*a.LTC;
+  const constructionInterest=constructionLoan*(a.ConstructionRate/12)*a.ConstructionMonths*0.5;
+  // Permanent loan at handover = construction loan + capitalised interest
+  let lb=constructionLoan+constructionInterest;
+  const rows=[],ul=[-(cc+constructionInterest)];  // unlevered: all-in cost as initial outflow
+  for(let yr=1;yr<=N;yr++){
+    const vac=yr===1?a.Vac1Rate:yr===2?a.Vac2Rate:a.VacRate;
+    const gpi=rent_y1*nla,egi=gpi*(1-vac);
+    if(yr===1){} // vacancy handled inline
+    const stat_total=fg_cost+ll_cost+trygg_cost+vatn_cost+frav_cost+vidh_cost;
+    const gexp=stat_total+(egi*a.OpexPct)+egi*a.MgmtFee;
+    const nexp=gexp*(1-a.ExpRecov),noi=egi-nexp;
+    const depr=yr<=a.AmortYrs?cc/a.AmortYrs:0;
+    const tax=Math.max(0,(noi-depr)*a.TaxRate);
+    const cfbds=(noi-tax)+depr;
+    const interest=lb*realRate;
+    let principal=0,tds=interest;
+    if(yr>a.IOPeriod){
+      const rem=a.LoanAmort-(yr-a.IOPeriod)+1;
+      if(rem>0&&lb>0){
+        const pmt=lb*realRate/(1-Math.pow(1+realRate,-rem));
+        principal=Math.max(0,Math.min(lb,pmt-interest));
+      }else{principal=lb;}
+      tds=interest+principal;
+    }
+    const dscr=tds>0?noi/tds:Infinity;
+    lb=Math.max(0,lb-principal);
+    const propVal=noi/a.ExitCapRate;
+    const netEquity=propVal-lb;
+    let tv=0;
+    if(yr===N){
+      const tvg=noi/a.ExitCapRate;
+      const tvn=tvg*(1-a.ExitCosts);
+      const book=Math.max(0,cc-cc/a.AmortYrs*yr);
+      tv=tvn-Math.max(0,(tvn-book)*a.CGTRate);
+    }
+    ul.push(cfbds+tv);
+    rows.push({yr:a.Yr1+yr-1,rent:rent_y1,rent_mo:rent_y1/12,gpi,egi,noi,cfbds,tds,dscr,tv_aftertax:tv,interest,principal,depr,tax,lb_end:lb,propVal,netEquity});
+  }
+  let npv=ul[0];for(let t=1;t<ul.length;t++)npv+=ul[t]/Math.pow(1+a.WACC,t);
+  return{rows,npv,ul_cfs:ul,constructionInterest,loanAtHandover:constructionLoan+constructionInterest};
+}
+
+// ══════════════════════════════════════════════════════
+//  SOLVERS
+// ══════════════════════════════════════════════════════
+function solveRent(a,tol=0.01){
+  let lo=100,hi=500000;
+  let nlo=computeModel(lo,a).npv;
+  if(computeModel(lo,a).npv*computeModel(hi,a).npv>0)
+    throw new Error('Cannot bracket solution. Ensure WACC > Exit Cap Rate.');
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2;
+    const{npv,rows,ul_cfs}=computeModel(mid,a);
+    if(Math.abs(npv)<tol||(hi-lo)<0.01)return{rent:mid,rows,npv,ul_cfs};
+    if(computeModel(lo,a).npv*npv<0)hi=mid;else{lo=mid;}
+  }
+  const mid=(lo+hi)/2;const{npv,rows,ul_cfs}=computeModel(mid,a);
+  return{rent:mid,rows,npv,ul_cfs};
+}
+
+// Faster bisection (reuses npv_lo)
+function solveRentFast(a,tol=0.01){
+  let lo=100,hi=500000;
+  let nlo=computeModel(lo,a).npv,nhi=computeModel(hi,a).npv;
+  if(nlo*nhi>0)throw new Error('Cannot bracket solution. Ensure WACC > Exit Cap Rate.');
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2;
+    const{npv,rows,ul_cfs,constructionInterest}=computeModel(mid,a);
+    if(Math.abs(npv)<tol||(hi-lo)<0.01)return{rent:mid,rows,npv,ul_cfs,constructionInterest};
+    if(nlo*npv<0){hi=mid;nhi=npv;}else{lo=mid;nlo=npv;}
+  }
+  const mid=(lo+hi)/2;const{npv,rows,ul_cfs,constructionInterest}=computeModel(mid,a);
+  return{rent:mid,rows,npv,ul_cfs,constructionInterest};
+}
+
+// ══════════════════════════════════════════════════════
+//  IRR
+// ══════════════════════════════════════════════════════
+function calcIRR(cfs,g=0.08){
+  let r=g;
+  for(let i=0;i<200;i++){
+    let n=0,d=0;
+    for(let t=0;t<cfs.length;t++){n+=cfs[t]/Math.pow(1+r,t);if(t>0)d-=t*cfs[t]/Math.pow(1+r,t+1);}
+    if(Math.abs(d)<1e-14)break;
+    const r2=r-n/d;if(Math.abs(r2-r)<1e-10){r=r2;break;}
+    r=r2;if(r<-0.999)return NaN;
+  }
+  return r;
+}
+
+function calcEqIRR(rows,a){
+  const eq=a.CC_Total*(1-a.LTC);const cfs=[-eq];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i],cf=r.cfbds-r.tds;
+    // At exit: equity receives TV minus remaining loan balance (already CPI-inflated in lb_end)
+    cfs.push(i===rows.length-1?cf+r.tv_aftertax-r.lb_end:cf);
+  }
+  return calcIRR(cfs,0.12);
+}
+
+// ══════════════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════════════
+const CH={};
+const CD={responsive:true,maintainAspectRatio:true,
+  plugins:{legend:{labels:{color:'#8896b3',font:{family:'Space Mono',size:10},boxWidth:12,padding:16}}},
+  scales:{x:{ticks:{color:'#8896b3',font:{family:'Space Mono',size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+          y:{ticks:{color:'#8896b3',font:{family:'Space Mono',size:10}},grid:{color:'rgba(255,255,255,0.06)'}}}};
+
+function mkC(id,type,data,ex={}){
+  if(CH[id])CH[id].destroy();
+  CH[id]=new Chart(document.getElementById(id).getContext('2d'),{type,data,options:{...CD,...ex}});
+}
+
+function buildCharts(rows,a){
+  const lbl=rows.map(r=>r.yr),toM=v=>v/1e6;
+  mkC('chartIncome','line',{labels:lbl,datasets:[
+    {label:'EGI',data:rows.map(r=>toM(r.egi)),borderColor:'#4a90d9',backgroundColor:'rgba(74,144,217,0.1)',tension:0.3,pointRadius:3,fill:false},
+    {label:'NOI',data:rows.map(r=>toM(r.noi)),borderColor:'#3dbb7c',backgroundColor:'rgba(61,187,124,0.1)',tension:0.3,pointRadius:3,fill:false},
+    {label:'CFBDS',data:rows.map(r=>toM(r.cfbds)),borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,0.1)',tension:0.3,pointRadius:3,fill:false},
+  ]},{scales:{x:CD.scales.x,y:{...CD.scales.y,title:{display:true,text:'ISK Million',color:'#8896b3',font:{size:10,family:'Space Mono'}}}}});
+  mkC('chartRent','line',{labels:lbl,datasets:[
+    {label:'Annual ISK/m2/yr',data:rows.map(r=>r.rent),borderColor:'#c9a84c',tension:0.3,pointRadius:3,fill:false},
+    {label:'Monthly ISK/m2/mo',data:rows.map(r=>r.rent_mo),borderColor:'#e8854a',tension:0.3,pointRadius:3,fill:false,borderDash:[5,3]},
+  ]});
+  mkC('chartDscr','line',{labels:lbl,datasets:[
+    {label:'DSCR',data:rows.map(r=>+r.dscr.toFixed(3)),borderColor:'#4a90d9',tension:0.3,pointRadius:4,fill:false,
+     pointBackgroundColor:rows.map(r=>r.dscr>=a.MinDSCR?'#3dbb7c':'#e05c5c')},
+    {label:'Min '+a.MinDSCR+'x',data:rows.map(()=>a.MinDSCR),borderColor:'#e05c5c',borderDash:[6,4],pointRadius:0,fill:false},
+  ]},{scales:{x:CD.scales.x,y:{...CD.scales.y,min:Math.max(0,Math.min(...rows.map(r=>r.dscr))-0.3)}}});
+  const ce=rows.reduce((s,r)=>s+r.egi,0),cx=rows.reduce((s,r)=>s+(r.egi-r.noi),0);
+  const ct=rows.reduce((s,r)=>s+r.tax,0),tv=rows[rows.length-1].tv_aftertax;
+  const wv=[-a.CC_Total,ce,-cx,-ct,tv].map(v=>v/1e9);
+  mkC('chartWaterfall','bar',{labels:['Cost','Cum EGI','Cum Exp','Cum Tax','Terminal'],
+    datasets:[{label:'ISK B',data:wv,backgroundColor:wv.map(v=>v>=0?'rgba(61,187,124,0.75)':'rgba(224,92,92,0.75)'),borderRadius:4}]},
+    {plugins:{...CD.plugins,legend:{display:false}},scales:{x:CD.scales.x,y:{...CD.scales.y,title:{display:true,text:'ISK Billion',color:'#8896b3',font:{size:10,family:'Space Mono'}}}}});
+}
+
+function buildTable(rows,md){
+  const tb=document.getElementById('tableBody');tb.innerHTML='';
+  for(const r of rows){
+    const dc=r.dscr>=md?'dscr-ok':'dscr-bad';
+    const eqc=r.netEquity>0?'dscr-ok':'dscr-bad';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.yr}</td><td>${fmt(r.rent,0)}</td><td>${fmt(r.rent_mo,0)}</td><td>${fmtB(r.gpi)}</td><td>${fmtB(r.egi)}</td><td>${fmtB(r.noi)}</td><td>${fmtB(r.cfbds)}</td><td>${fmtB(r.tds)}</td><td class="${dc}">${r.dscr.toFixed(2)}x</td><td>${fmtB(r.lb_end)}</td><td>${fmtB(r.propVal)}</td><td class="${eqc}">${fmtB(r.netEquity)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  TORNADO CHART
+// ══════════════════════════════════════════════════════
+function buildTornado(baseRent, baseA){
+  // Define stresses: [label, paramKey, delta, direction]
+  // direction: +1 means adding delta makes things worse (rent goes up)
+  const stresses=[
+    {label:'WACC',              lo:{WACC:baseA.WACC-0.005},          hi:{WACC:baseA.WACC+0.005},          note:'+-0.5% pt'},
+    {label:'Exit Cap Rate',     lo:{ExitCapRate:baseA.ExitCapRate-0.005}, hi:{ExitCapRate:baseA.ExitCapRate+0.005}, note:'+-0.5% pt'},
+    {label:'Construction Cost', lo:{CC_Total:baseA.CC_Total*0.90},   hi:{CC_Total:baseA.CC_Total*1.10},   note:'+-10%'},
+    {label:'Stab. Vacancy',     lo:{VacRate:Math.max(0,baseA.VacRate-0.05)}, hi:{VacRate:baseA.VacRate+0.05}, note:'+-5% pts'},
+    {label:'Real Base Rate',    lo:{RealBase:Math.max(0.005,baseA.RealBase-0.01)}, hi:{RealBase:baseA.RealBase+0.01}, note:'+-1% pt'},
+    {label:'Lender Margin',     lo:{LoanMargin:Math.max(0,baseA.LoanMargin-0.005)}, hi:{LoanMargin:baseA.LoanMargin+0.005}, note:'+-0.5% pt'},
+    {label:'Opex % EGI',        lo:{OpexPct:Math.max(0,baseA.OpexPct-0.02)}, hi:{OpexPct:baseA.OpexPct+0.02}, note:'+-2% pts'},
+    {label:'Exit Costs',        lo:{ExitCosts:Math.max(0,baseA.ExitCosts-0.005)}, hi:{ExitCosts:baseA.ExitCosts+0.005}, note:'+-0.5% pt'},
+    {label:'Vatnsgjald',        lo:{VatnRate:Math.max(0,baseA.VatnRate-0.0003)}, hi:{VatnRate:baseA.VatnRate+0.0003}, note:'+-0.03% pt'},
+    {label:'Fráveitugjald',     lo:{FravRate:Math.max(0,baseA.FravRate-0.0005)}, hi:{FravRate:baseA.FravRate+0.0005}, note:'+-0.05% pt'},
+  ];
+
+  const results=stresses.map(s=>{
+    const aLo={...baseA,...s.lo};
+    const aHi={...baseA,...s.hi};
+    let rentLo,rentHi;
+    try{rentLo=solveRentFast(aLo).rent;}catch(e){rentLo=baseRent;}
+    try{rentHi=solveRentFast(aHi).rent;}catch(e){rentHi=baseRent;}
+    return{
+      label:s.label+' ('+s.note+')',
+      lo:rentLo-baseRent,  // negative = rent goes down
+      hi:rentHi-baseRent,  // positive = rent goes up
+      swing:Math.abs(rentHi-rentLo),
+    };
+  });
+
+  // Sort by total swing descending
+  results.sort((a,b)=>b.swing-a.swing);
+
+  const labels=results.map(r=>r.label);
+  const loData=results.map(r=>Math.min(r.lo,r.hi));  // always the negative bar
+  const hiData=results.map(r=>Math.max(r.lo,r.hi));  // always the positive bar
+
+  if(CH['chartTornado'])CH['chartTornado'].destroy();
+  const ctx=document.getElementById('chartTornado').getContext('2d');
+  CH['chartTornado']=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Downside (rent rises)',data:hiData,backgroundColor:'rgba(224,92,92,0.75)',borderRadius:3,borderSkipped:false},
+        {label:'Upside (rent falls)', data:loData, backgroundColor:'rgba(61,187,124,0.75)',borderRadius:3,borderSkipped:false},
+      ]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#8896b3',font:{family:'Space Mono',size:10},boxWidth:12,padding:16}},
+        tooltip:{
+          callbacks:{
+            label:ctx=>{
+              const v=ctx.raw;
+              const sign=v>=0?'+':'';
+              return ' '+ctx.dataset.label+': '+sign+Math.round(v).toLocaleString()+' ISK/m2/yr';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'#8896b3',font:{family:'Space Mono',size:10},
+            callback:v=>(v>=0?'+':'')+Math.round(v).toLocaleString()},
+          grid:{color:'rgba(255,255,255,0.06)'},
+          title:{display:true,text:'Change in required rent vs Base (ISK/m2/yr)',color:'#8896b3',font:{size:10,family:'Space Mono'}},
+        },
+        y:{ticks:{color:'#d0daf0',font:{family:'Source Sans 3',size:12}},grid:{color:'rgba(255,255,255,0.03)'}},
+      }
+    }
+  });
+
+  // Set canvas height based on number of bars
+  document.getElementById('chartTornado').style.height=(results.length*52+80)+'px';
+  document.getElementById('tornadoSection').style.display='block';
+}
+
+// ══════════════════════════════════════════════════════
+//  RUN MODEL (main tab)
+// ══════════════════════════════════════════════════════
+function runModel(){
+  const btn=document.getElementById('runBtn');
+  btn.classList.add('running');btn.textContent='Solving...';
+  setTimeout(()=>{
+    try{
+      const a=getInputs();
+      if(a.CC_Total<=0)throw new Error('Construction cost must be > 0');
+      if(a.NLA<=0)throw new Error('NLA must be > 0');
+      if(a.WACC<=a.ExitCapRate)throw new Error('WACC must be greater than Exit Cap Rate');
+      const{rent,rows,npv,ul_cfs,constructionInterest}=solveRentFast(a);
+      const ul_irr=calcIRR(ul_cfs),lv_irr=calcEqIRR(rows,a);
+      const eq=a.CC_Total*(1-a.LTC),last=rows[rows.length-1];
+      let lb_end=a.CC_Total*a.LTC;rows.forEach(r=>{lb_end-=(r.principal||0);});
+      const eqm=eq>0?(last.tv_aftertax-Math.max(0,lb_end))/eq:0;
+      const stabRow=rows[Math.min(2,rows.length-1)];
+      const yoc=stabRow.noi/a.CC_Total;
+      const grossYield=stabRow.gpi/a.CC_Total;
+      const noiRatio=stabRow.gpi>0?stabRow.noi/stabRow.gpi:0;
+      const ccPsm=a.CC_Total/a.NLA;
+      const rentMultiplier=rent>0?ccPsm/(rent/12):0;
+      const mdv=Math.min(...rows.map(r=>r.dscr));
+      const br=rows.filter(r=>r.dscr<a.MinDSCR);
+      document.getElementById('emptyState').style.display='none';
+      document.getElementById('resultsContent').style.display='block';
+      document.getElementById('heroAnnual').textContent=fmt(rent,0);
+      document.getElementById('heroMonthly').textContent=fmt(rent/12,0);
+      document.getElementById('heroGpi').textContent=fmtB(stabRow.gpi);
+      const sk=(id,v,c='')=>{const e=document.getElementById(id);e.textContent=v;e.className='kpi-val '+c;};
+      sk('kpiUlIrr',pct(ul_irr),ul_irr>=a.WACC?'good':'bad');
+      sk('kpiLvIrr',isNaN(lv_irr)?'--':pct(lv_irr),lv_irr>ul_irr?'good':'');
+      sk('kpiEqMult',eqm.toFixed(2)+'x',eqm>=2?'good':eqm>=1.5?'warn':'bad');
+      sk('kpiMultiplier',rentMultiplier.toFixed(0)+'x','');
+      sk('kpiGrossYield',pct(grossYield),grossYield>=a.ExitCapRate?'good':'warn');
+      sk('kpiYoc',pct(yoc),yoc>=a.ExitCapRate?'good':'warn');
+      sk('kpiNoiRatio',p1(noiRatio),noiRatio>=0.8?'good':noiRatio>=0.7?'warn':'bad');
+      sk('kpiMinDscr',mdv.toFixed(2)+'x',mdv>=a.MinDSCR?'good':'bad');
+      sk('kpiTv',fmtB(last.tv_aftertax),'good');
+      // Show gross exit in sub-label for clarity
+      const grossExit=last.noi/a.ExitCapRate;
+      document.querySelector('#kpiTv').closest('.kpi-card').querySelector('.kpi-sub').textContent=
+        `Net after CGT · gross ${fmtB(grossExit)}`;
+      sk('kpiNetEquity',fmtB(last.tv_aftertax-last.lb_end),last.tv_aftertax-last.lb_end>0?'good':'bad');
+      sk('kpiCcPsm',fmt(ccPsm,0),'');
+      const ci=constructionInterest||0;
+      sk('kpiAllinPsm',fmt((a.CC_Total+ci)/a.NLA,0),
+        ci>0?`+${fmt(Math.round(ci/1e6),0)}M financing`:'');
+      sk('kpiNpv',fmtB(npv),'');
+
+      // Opex breakdown at stabilised year (Year 3, index 2)
+      const stabRow2 = rows[Math.min(2, rows.length-1)];
+      const cc2 = a.CC_Total;
+      const fg_isk2 = cc2*a.FgPct, lo_isk2 = cc2*a.LoPct, bt_isk2 = cc2*a.BtPct;
+      const statCosts = fg_isk2*a.FgRate + lo_isk2*a.LlRate + bt_isk2*a.TryggRate
+                      + fg_isk2*a.VatnRate + fg_isk2*a.FravRate;
+      const vidhCost  = cc2*a.VidHaldPct;
+      const stabEgi   = stabRow2.egi;
+      const opexCost  = stabEgi*a.OpexPct;
+      const mgmtCost  = stabEgi*a.MgmtFee;
+      const totalGexp = statCosts + vidhCost + opexCost + mgmtCost;
+      const totalNexp = totalGexp*(1-a.ExpRecov);   // net after recovery
+      sk('kpiTotalOpex', fmtB(totalNexp), '');
+      sk('kpiStatOpex',  fmtB(statCosts), '');
+      sk('kpiOwnerNoi',  fmtB(stabRow2.noi), 'good');
+      const w=document.getElementById('dscrWarning');
+      if(br.length>0){w.innerHTML='DSCR breach in '+br.length+' year(s): '+br.map(r=>r.yr).join(', ')+'. DSCR falls below '+a.MinDSCR+'x minimum. Consider extending IO period or adjusting loan terms.';w.style.display='block';}
+      else w.style.display='none';
+      buildCharts(rows,a);buildTable(rows,a.MinDSCR);
+      buildTornado(rent,a);
+      buildSensitivityTab(rent,a);
+    }catch(e){alert('Model error: '+e.message);}
+    btn.classList.remove('running');btn.innerHTML='&#9654; &nbsp; Run Model';
+    if(window.innerWidth<1100)document.getElementById('resultsPanel').scrollIntoView({behavior:'smooth'});
+  },30);
+}
+
+// ══════════════════════════════════════════════════════
+//  SENSITIVITY ANALYSIS
+// ══════════════════════════════════════════════════════
+
+// Solve safely — return null if WACC <= ExitCapRate or other error
+function solveRentSafe(a){
+  try{
+    if(a.WACC<=a.ExitCapRate)return null;
+    return solveRentFast(a).rent;
+  }catch(e){return null;}
+}
+
+// Interpolate colour: green (low) → yellow (mid) → red (high)
+function heatColour(val,min,max){
+  if(val===null)return'rgba(255,255,255,0.05)';
+  const t=Math.max(0,Math.min(1,(val-min)/(max-min||1)));
+  if(t<0.5){
+    // green → yellow
+    const u=t*2;
+    const r=Math.round(30+u*(200-30));
+    const g=Math.round(160+u*(180-160));
+    const b=Math.round(80+u*(30-80));
+    return`rgba(${r},${g},${b},0.55)`;
+  } else {
+    // yellow → red
+    const u=(t-0.5)*2;
+    const r=Math.round(200+u*(210-200));
+    const g=Math.round(180+u*(70-180));
+    const b=Math.round(30+u*(60-30));
+    return`rgba(${r},${g},${b},0.55)`;
+  }
+}
+
+function buildHeatMap(containerId, title, subtitle, rowParam, colParam, baseA){
+  const {rowLabel,rowVals,rowFmt,colLabel,colVals,colFmt}=buildAxes(rowParam,colParam,baseA);
+
+  // Compute rent grid
+  const grid=rowVals.map(rv=>colVals.map(cv=>{
+    const a={...baseA,[rowParam]:rv,[colParam]:cv};
+    return solveRentSafe(a);
+  }));
+
+  // Min/max for colour scale (ignore nulls)
+  const allVals=grid.flat().filter(v=>v!==null);
+  const minV=Math.min(...allVals),maxV=Math.max(...allVals);
+
+  // Find base indices
+  const baseRowIdx=rowVals.findIndex(v=>Math.abs(v-baseA[rowParam])<1e-9);
+  const baseColIdx=colVals.findIndex(v=>Math.abs(v-baseA[colParam])<1e-9);
+
+  // Build HTML
+  let html=`
+    <div class="heatmap-card">
+      <div class="heatmap-card-header">
+        <h3>${title}</h3>
+        <p>${subtitle}</p>
+      </div>
+      <div class="heatmap-body">
+        <table class="heatmap-table">
+          <thead>
+            <tr>
+              <th class="row-header"></th>
+              ${colVals.map((v,ci)=>`<th>${colFmt(v)}${ci===baseColIdx?'<br><span style="color:var(--gold);font-size:8px;">BASE</span>':''}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>`;
+
+  rowVals.forEach((rv,ri)=>{
+    html+=`<tr>
+      <td class="row-label">${rowFmt(rv)}${ri===baseRowIdx?'<span style="color:var(--gold);font-size:8px;display:block;">BASE</span>':''}</td>`;
+    colVals.forEach((cv,ci)=>{
+      const val=grid[ri][ci];
+      const colour=heatColour(val,minV,maxV);
+      const isBase=(ri===baseRowIdx&&ci===baseColIdx);
+      const cellClass=isBase?'base-cell':'';
+      const display=val===null?'N/A':Math.round(val/12).toLocaleString();
+      const cell=document.createElement?null:null;
+      html+=`<td class="${cellClass}" style="background:${colour};" title="${val?Math.round(val/12).toLocaleString()+' ISK/m2/mo':'Invalid'}">${display}</td>`;
+    });
+    html+='</tr>';
+  });
+
+  html+=`</tbody></table>
+        <div class="heatmap-axis-label">&#8592; ${colLabel} &#8594;</div>
+      </div>
+    </div>`;
+
+  return html;
+}
+
+function buildAxes(rowParam,colParam,a){
+  const axisConfig={
+    WACC:       {label:'Real WACC',      vals:(b)=>[b-0.02,b-0.01,b,b+0.01,b+0.02],       fmt:v=>(v*100).toFixed(1)+'%'},
+    ExitCapRate:{label:'Real Exit Cap',  vals:(b)=>[b-0.015,b-0.0075,b,b+0.0075,b+0.015],fmt:v=>(v*100).toFixed(1)+'%'},
+    CC_Total:   {label:'Const. Cost',    vals:(b)=>[b*0.80,b*0.90,b,b*1.10,b*1.20],       fmt:v=>(v/1e9).toFixed(2)+'B'},
+    VacRate:    {label:'Stab. Vacancy',  vals:(b)=>[Math.max(0,b-0.10),Math.max(0,b-0.05),b,b+0.05,b+0.10],fmt:v=>(v*100).toFixed(0)+'%'},
+    RealBase:   {label:'Real Base Rate', vals:(b)=>[Math.max(0.005,b-0.02),Math.max(0.005,b-0.01),b,b+0.01,b+0.02],fmt:v=>(v*100).toFixed(2)+'%'},
+    LTC:        {label:'LTC',            vals:(b)=>[Math.max(0.1,b-0.15),Math.max(0.1,b-0.075),b,b+0.075,b+0.15],fmt:v=>(v*100).toFixed(0)+'%'},
+  };
+  const rc=axisConfig[rowParam],cc=axisConfig[colParam];
+  return{
+    rowLabel:rc.label, rowVals:rc.vals(a[rowParam]), rowFmt:rc.fmt,
+    colLabel:cc.label, colVals:cc.vals(a[colParam]), colFmt:cc.fmt,
+  };
+}
+
+function buildOneWay(baseRent, baseA){
+  // Define variables with 5 steps centred on base
+  const vars=[
+    {label:'Real WACC',           key:'WACC',        steps:[-0.02,-0.01,0,0.01,0.02],      fmt:v=>(v*100).toFixed(1)+'%',  hdr:v=>(v*100).toFixed(1)+'%'},
+    {label:'Real Exit Cap Rate',  key:'ExitCapRate',  steps:[-0.015,-0.0075,0,0.0075,0.015],fmt:v=>(v*100).toFixed(2)+'%', hdr:v=>(v*100).toFixed(2)+'%'},
+    {label:'Construction Cost',   key:'CC_Total',     steps:[-0.20,-0.10,0,0.10,0.20],     fmt:v=>(v/1e9).toFixed(2)+'B ISK',hdr:(v,b)=>{const d=((v/b-1)*100);return(d>=0?'+':'')+d.toFixed(0)+'%'},isRelative:true},
+    {label:'Stab. Vacancy',       key:'VacRate',      steps:[-0.10,-0.05,0,0.05,0.10],     fmt:v=>(v*100).toFixed(0)+'%',  hdr:v=>(v*100).toFixed(0)+'%'},
+    {label:'Real Base Rate',      key:'RealBase',     steps:[-0.02,-0.01,0,0.01,0.02],     fmt:v=>(v*100).toFixed(2)+'%',  hdr:v=>(v*100).toFixed(2)+'%'},
+    {label:'Lender Margin',       key:'LoanMargin',   steps:[-0.01,-0.005,0,0.005,0.01],   fmt:v=>(v*100).toFixed(2)+'%',  hdr:v=>(v*100).toFixed(2)+'%'},
+    {label:'Opex % EGI',          key:'OpexPct',      steps:[-0.04,-0.02,0,0.02,0.04],     fmt:v=>(v*100).toFixed(0)+'%',  hdr:v=>(v*100).toFixed(0)+'%'},
+    {label:'Exit Costs',          key:'ExitCosts',    steps:[-0.01,-0.005,0,0.005,0.01],   fmt:v=>(v*100).toFixed(1)+'%',  hdr:v=>(v*100).toFixed(1)+'%'},
+    {label:'Vatnsgjald rate',     key:'VatnRate',     steps:[-0.0003,-0.00015,0,0.00015,0.0003],fmt:v=>(v*100).toFixed(4)+'%',hdr:v=>(v*100).toFixed(4)+'%'},
+    {label:'Fráveitugjald rate',  key:'FravRate',     steps:[-0.0005,-0.00025,0,0.00025,0.0005],fmt:v=>(v*100).toFixed(4)+'%',hdr:v=>(v*100).toFixed(4)+'%'},
+  ];
+
+  // Collect all values for colour scale
+  const allRents=[];
+  const rowData=vars.map(v=>{
+    return v.steps.map(s=>{
+      let newVal;
+      if(v.isRelative) newVal=baseA[v.key]*(1+s);
+      else newVal=Math.max(0.001,baseA[v.key]+s);
+      const a={...baseA,[v.key]:newVal};
+      const rent=solveRentSafe(a);
+      if(rent!==null)allRents.push(rent);
+      return{val:newVal,rent,isBase:s===0};
+    });
+  });
+  const minR=Math.min(...allRents),maxR=Math.max(...allRents);
+
+  // Build table
+  let html=`<thead><tr><th>Variable</th>`;
+  // Column headers from first var steps
+  vars[0].steps.forEach((s,i)=>{
+    const isBase=s===0;
+    const lbl=i===0?'Low &#9668;':i===4?'&#9658; High':isBase?'Base Case':'';
+    html+=`<th class="${isBase?'base-col':''}">${lbl}</th>`;
+  });
+  html+='</tr></thead><tbody>';
+
+  vars.forEach((v,vi)=>{
+    html+=`<tr><td>${v.label}</td>`;
+    rowData[vi].forEach(cell=>{
+      const isBase=cell.isBase;
+      const rent=cell.rent;
+      const colour=(!isBase&&rent!==null)?heatColour(rent,minR,maxR):'';
+      const style=isBase?'':'background:'+colour+';';
+      const display=rent===null?'N/A':Math.round(rent/12).toLocaleString();
+      const paramDisp=v.isRelative
+        ?v.hdr(cell.val,baseA[v.key])
+        :v.hdr(cell.val);
+      html+=`<td class="${isBase?'base-col':''}" style="${style}">
+        ${display}
+        <span class="param-val">${paramDisp}</span>
+      </td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  return html;
+}
+
+function buildSensitivityTab(baseRent, a){
+  document.getElementById('sensEmpty').style.display='none';
+  document.getElementById('sensContent').style.display='block';
+
+  // Three heat maps
+  const hg=document.getElementById('heatmapGrid');
+  hg.innerHTML=
+    buildHeatMap(hg,'WACC vs Exit Cap Rate','Required rent ISK/m2/month','WACC','ExitCapRate',a)+
+    buildHeatMap(hg,'Construction Cost vs Vacancy','Required rent ISK/m2/month','CC_Total','VacRate',a)+
+    buildHeatMap(hg,'Real Base Rate vs LTC','Required rent ISK/m2/month','RealBase','LTC',a);
+
+  // One-way table
+  document.getElementById('onewayTable').innerHTML=buildOneWay(baseRent,a);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')runModel();});
+</script>
+</body>
+</html>
